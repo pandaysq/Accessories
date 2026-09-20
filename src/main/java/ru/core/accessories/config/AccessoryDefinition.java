@@ -15,6 +15,8 @@ public record AccessoryDefinition(
         String material,
         int modelNumber,
         int deathKeepChance,
+        double manaMaxBonus,
+        double manaRegenBonus,
         List<EffectGroup> effects
 ) {
     public enum SlotType {
