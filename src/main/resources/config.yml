@@ -1,0 +1,74 @@
+settings:
+  condition-check-interval-ticks: 10
+  event-trigger-seconds: 60
+  target-last-hit-seconds: 15
+  target-ray-distance: 20
+  mana-provider: none
+
+interface:
+  button:
+    material: NETHER_STAR
+    model-number: 9100
+    name: '<aqua>Аксессуары'
+    lore:
+      - '<gray>Нажмите, чтобы открыть меню'
+  background:
+    material: GRAY_STAINED_GLASS_PANE
+    name: ' '
+    model-number: 0
+  slot-necklace:
+    material: PAPER
+    model-number: 9101
+    name: '<gray>Ожерелье'
+  slot-emblem:
+    material: PAPER
+    model-number: 9102
+    name: '<gray>Эмблема'
+  slot-ring:
+    material: PAPER
+    model-number: 9103
+    name: '<gray>Кольцо'
+  slot-locked:
+    material: CHAIN
+    model-number: 9104
+    name: '<red>Слот заблокирован'
+
+slots:
+  necklace:
+    permission: accessory.slot.necklace
+    type: NECKLACE
+  emblem:
+    permission: accessory.slot.emblem
+    type: EMBLEM
+  ring1:
+    permission: accessory.slot.ring1
+    type: RING
+  ring2:
+    permission: accessory.slot.ring2
+    type: RING
+
+accessories:
+  ruby_ring:
+    name: '<red>Рубиновое кольцо'
+    lore:
+      - '<gray>Даёт силу'
+    type: RING
+    material: STICK
+    model-number: 1001
+    death-keep-chance: 25
+    effects:
+      - group: 1
+        mode: all
+        duration-after-trigger: 0
+        conditions:
+          - type: health
+            value: '<=8'
+        attributes:
+          - attribute: ATTACK_DAMAGE
+            operation: ADD_NUMBER
+            amount: 2
+        potion-effects:
+          - type: STRENGTH
+            amplifier: 0
+            particles: false
+            icon: false
