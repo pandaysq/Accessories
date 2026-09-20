@@ -1,5 +1,6 @@
 package ru.core.accessories.manager;
 
+import ru.core.accessories.api.AccessoriesAPI;
 import ru.core.accessories.config.AccessoryConfig;
 import ru.core.accessories.config.MessageManager;
 import ru.core.accessories.effect.EffectEngine;
@@ -21,10 +22,11 @@ public final class PluginServices {
     private final AccessoryMenu menu;
     private final PlayerStateTracker state;
     private final EffectEngine effects;
+    private final AccessoriesAPI api;
 
     public PluginServices(AccessoryConfig config, MessageManager messages, LibraryBridge library,
                           InterfaceItems interfaceItems, AccessoryMenu menu,
-                          PlayerStateTracker state, EffectEngine effects) {
+                          PlayerStateTracker state, EffectEngine effects, AccessoriesAPI api) {
         this.config = config;
         this.messages = messages;
         this.library = library;
@@ -32,6 +34,7 @@ public final class PluginServices {
         this.menu = menu;
         this.state = state;
         this.effects = effects;
+        this.api = api;
     }
 
     public AccessoryConfig config() { return config; }
@@ -41,8 +44,10 @@ public final class PluginServices {
     public AccessoryMenu menu() { return menu; }
     public PlayerStateTracker state() { return state; }
     public EffectEngine effects() { return effects; }
+    public AccessoriesAPI api() { return api; }
 
     public void shutdown() {
         effects.shutdown();
+        org.bukkit.Bukkit.getServicesManager().unregister(AccessoriesAPI.class, api);
     }
 }
