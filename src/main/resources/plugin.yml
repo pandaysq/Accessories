@@ -5,11 +5,12 @@ api-version: '1.21'
 authors: [CoreCommands]
 description: Configurable accessory slots, conditions and effects.
 depend: [CustomItemsLibrary]
+softdepend: [Mana]
 
 commands:
   accessories:
     description: Manage accessory items and configuration
-    usage: /accessories <reload|give>
+    usage: /accessories <reload|give|stats>
     aliases: [accessory]
 
 permissions:
