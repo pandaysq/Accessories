@@ -3,7 +3,12 @@ settings:
   event-trigger-seconds: 60
   target-last-hit-seconds: 15
   target-ray-distance: 20
-  mana-provider: none
+  target-source: any
+
+stats:
+  known:
+    - magic_damage
+    - magic_defense
 
 interface:
   button:
