@@ -68,15 +68,33 @@ public final class AccessoriesCommand implements org.bukkit.command.CommandExecu
             sender.sendMessage("§aАксессуар выдан игроку §f" + target.getName() + "§a.");
             return true;
         }
-        sender.sendMessage("§eИспользование: /accessories reload или /accessories give <игрок> <id> [количество]");
+        if ((args.length == 1 || args.length == 2) && args[0].equalsIgnoreCase("stats")) {
+            Player target = args.length == 2 ? Bukkit.getPlayerExact(args[1])
+                    : sender instanceof Player player ? player : null;
+            if (target == null) {
+                sender.sendMessage("§cИгрок не найден.");
+                return true;
+            }
+            sender.sendMessage("§bПараметры " + target.getName() + ":");
+            services.api().getStats(target).forEach((stat, value) ->
+                    sender.sendMessage("§7  " + stat + ": §f" + value));
+            services.effects().statContributions(target).forEach((accessory, values) ->
+                    values.forEach((stat, value) -> sender.sendMessage(
+                            "§8  " + accessory + " → " + stat + ": §f" + value)));
+            return true;
+        }
+        sender.sendMessage("§eИспользование: /accessories reload | give <игрок> <id> [количество] | stats [игрок]");
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!sender.hasPermission("accessories.admin")) return List.of();
-        if (args.length == 1) return List.of("reload", "give");
+        if (args.length == 1) return List.of("reload", "give", "stats");
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("stats")) {
             return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("give")) {
