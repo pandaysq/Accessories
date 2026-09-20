@@ -13,8 +13,10 @@ public record EffectGroup(
         int durationAfterTrigger,
         List<ConditionDefinition> conditions,
         List<AttributeDefinition> attributes,
+        List<StatDefinition> stats,
         List<PotionDefinition> potions
 ) {
     public record AttributeDefinition(String attribute, String operation, double amount) {}
+    public record StatDefinition(String stat, String operation, double amount) {}
     public record PotionDefinition(String type, int amplifier, boolean particles, boolean icon) {}
 }
