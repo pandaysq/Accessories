@@ -73,8 +73,11 @@ public final class PlayerListener implements Listener {
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
         services.state().recordEvent(killer, "killed_any");
-        if (event.getEntity() instanceof Player) services.state().recordEvent(killer, "killed_player");
-        else services.state().recordEvent(killer, "killed_mob");
+        if (event.getEntity() instanceof Player) {
+            services.state().recordEvent(killer, "killed_player", "PLAYER");
+        } else {
+            services.state().recordEvent(killer, "killed_mob", event.getEntityType().name());
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
