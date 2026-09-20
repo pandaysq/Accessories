@@ -134,7 +134,10 @@ public final class EffectEngine {
     }
 
     public boolean hasAccessory(Player player, String accessoryId) {
-        for (ItemStack item : storage.load(player).values()) {
+        Map<String, ItemStack> equipped = storage.load(player);
+        for (String slot : AccessoryStorage.SLOT_NAMES) {
+            if (!player.hasPermission(config.slotPermission(slot))) continue;
+            ItemStack item = equipped.get(slot);
             String id = library.getId(item).orElse(null);
             if (accessoryId.equals(id)) return true;
         }
