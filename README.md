@@ -29,7 +29,7 @@ Gradle подключает его как `compileOnly`, а `plugin.yml` тре�
 
 `/accessories reload` перечитывает оба YAML, удаляет из памяти библиотеки старые ID, регистрирует все ID заново и пересчитывает эффекты онлайн-игроков.
 
-`/accessories give <игрок> <id> [количество]` создаёт предмет через `ItemRegistry.createItem`. Обе подкоманды требуют `accessories.admin`.
+`/accessories give <игрок> <id> [количество]` создаёт предмет через `ItemRegistry.createItem`. `/accessories stats [игрок]` показывает итоговые custom stats и вклад аксессуаров. Все подкоманды требуют `accessories.admin`.
 
 Права слотов:
 
@@ -64,6 +64,8 @@ accessories:
     material: STICK
     model-number: 1001
     death-keep-chance: 25
+    mana-max-bonus: 100.0
+    mana-regen-bonus: 1.0
     effects:
       - group: 1
         mode: all
@@ -75,6 +77,13 @@ accessories:
           - attribute: ATTACK_DAMAGE
             operation: ADD_NUMBER
             amount: 2
+         stats:
+           - stat: magic_damage
+             operation: ADD_NUMBER
+             amount: 5
+           - stat: magic_defense
+             operation: ADD_SCALAR
+             amount: 0.1
         potion-effects:
           - type: STRENGTH
             amplifier: 0
@@ -84,11 +93,39 @@ accessories:
 
 `mode: all` требует выполнения всех условий, `mode: any` — хотя бы одного. Группа без условий всегда активна, пока аксессуар лежит в разрешённом слоте.
 
-Поддерживаются условия состояния: `health`, `food_level`, `saturation`, `armor_points`, `armor_pieces_count`, `debuff_count`, `effect_count`, `no_damage_for`, `not_on_ground`, `swimming`, `in_water`, `sprinting`, `sneaking`, `gliding`, `on_fire`, `riding`, `blocking`, `world`, `time_of_day`, `y_level`, `light_level`, `experience_level`, `mana`, `mana_regen`. Для маны используется `NoManaProvider`, который всегда возвращает ноль до отдельной интеграции.
+Поддерживаются условия состояния: `health`, `food_level`, `saturation`, `armor_points`, `armor_pieces_count`, `debuff_count`, `effect_count`, `no_damage_for`, `not_on_ground`, `swimming`, `in_water`, `sprinting`, `sneaking`, `gliding`, `on_fire`, `riding`, `blocking`, `world`, `time_of_day`, `y_level`, `light_level`, `experience_level`, `mana`, `mana_regen`, `armor_slot_present`, `armor_durability_total`, `armor_durability_slot`, `not_moving`, `low_air`, `weather`, `biome`, `holding_item`, `looking_at_player`, `looking_at_mob`, `target_debuff_count`, `target_effect_count`. Для маны используется ManaAPI через ServicesManager; при отсутствии Mana остаётся NoManaProvider.
 
-Сравнение чисел поддерживает `8`, `>=8`, `<=8`, `>8`, `<8` и диапазон `8..12`. События `killed_player`, `killed_mob`, `killed_any`, `died` записываются слушателями и должны использовать положительный `duration-after-trigger`.
+Сравнение чисел поддерживает `8`, `>=8`, `<=8`, `>8`, `<8` и диапазон `8..12`. События `killed_player`, `killed_mob`, `killed_any`, `died` записываются слушателями и должны использовать положительный `duration-after-trigger`; у `killed_mob` доступен фильтр `entity-type`.
 
-Атрибуты поддерживают `ADD_NUMBER`, `ADD_SCALAR`, `MULTIPLY_SCALAR_1`. Для каждого сочетания слота, ID аксессуара и группы создаётся собственный `NamespacedKey`, поэтому модификаторы снимаются точно при смене условия или предмета.
+Для `looking_at_mob` задайте `entity-type`, а для `target_debuff_count` и
+`target_effect_count` — `target-source: last_hit | looking | any`. Луч использует
+`settings.target-ray-distance`, а last-hit — `settings.target-last-hit-seconds`.
+Доступны также `armor_slot_present`, `armor_durability_total`,
+`armor_durability_slot`, `not_moving`, `low_air`, `weather`, `biome` и
+`holding_item`.
+
+Атрибуты поддерживают `ADD_NUMBER`, `ADD_SCALAR`, `MULTIPLY_SCALAR_1`. Custom stats объявляются в `config.yml` в `stats.known`, а в группе эффекта задаются блоком `stats`. Формула stat: `(сумма ADD_NUMBER) * (1 + сумма ADD_SCALAR) * произведение (1 + MULTIPLY_SCALAR_1)`. Неизвестные имена предупреждаются при загрузке.
+
+`AccessoriesAPI` регистрируется через Bukkit `ServicesManager`:
+
+```java
+RegisteredServiceProvider<AccessoriesAPI> registration =
+    Bukkit.getServicesManager().getRegistration(AccessoriesAPI.class);
+AccessoriesAPI accessories = registration.getProvider();
+double damage = accessories.getStat(player, "magic_damage");
+double defense = accessories.getStat(player, "magic_defense");
+boolean hasRing = accessories.hasAccessory(player, "ruby_ring");
+Map<String, Double> allStats = accessories.getStats(player);
+```
+
+`AccessoryStatsChangeEvent` сообщает об изменении итоговых параметров. Пример
+«магического» кольца находится в `accessories.yml`: оно даёт `magic_damage`
+через `ADD_NUMBER` и `magic_defense` через `ADD_SCALAR`.
+
+Если установлен плагин Mana, `mana-max-bonus` и `mana-regen-bonus` аксессуара
+вызывают его API с ключом `accessories:<slot>:<id>`. Модификаторы снимаются при
+снятии предмета, смерти, выходе или потере права на слот. Accessories не знает
+о реализации Mana и не требует его JAR в `libs/`.
 
 ## Добавление нового аксессуара
 
