@@ -19,11 +19,14 @@ public final class ConditionRegistry {
     private final ManaProvider mana;
     private final int targetRayDistance;
     private final int targetLastHitSeconds;
+    private final String targetSource;
 
-    public ConditionRegistry(ManaProvider mana, int targetRayDistance, int targetLastHitSeconds) {
+    public ConditionRegistry(ManaProvider mana, int targetRayDistance, int targetLastHitSeconds,
+                             String targetSource) {
         this.mana = mana;
         this.targetRayDistance = targetRayDistance;
         this.targetLastHitSeconds = targetLastHitSeconds;
+        this.targetSource = targetSource;
     }
 
     public List<Condition> create(List<ConditionDefinition> definitions) {
@@ -69,8 +72,8 @@ public final class ConditionRegistry {
             case "low_air" -> numeric((player, state) -> player.getRemainingAir(), value);
             case "not_moving" -> numeric((player, state) -> state.lastMoveAt() == 0 ? Double.MAX_VALUE
                     : (System.currentTimeMillis() - state.lastMoveAt()) / 1000.0, value);
-            case "target_debuff_count" -> numeric((player, state) -> targetEffects(state, false), value);
-            case "target_effect_count" -> numeric((player, state) -> targetEffects(state, true), value);
+            case "target_debuff_count" -> numeric((player, state) -> targetEffects(player, state, values, false), value);
+            case "target_effect_count" -> numeric((player, state) -> targetEffects(player, state, values, true), value);
             case "holding_item" -> (player, state) -> player.getInventory().getItemInMainHand().getType()
                     .name().equalsIgnoreCase(value);
             case "weather" -> (player, state) -> (player.getWorld().hasStorm() ? "storm" : "clear")
@@ -78,9 +81,11 @@ public final class ConditionRegistry {
             case "biome" -> (player, state) -> player.getLocation().getBlock().getBiome().name()
                     .equalsIgnoreCase(value);
             case "armor_slot_present" -> (player, state) -> armorSlotPresent(player, values);
-            case "looking_at_player", "looking_at_mob" -> (player, state) -> lookingAt(player, type);
-            case "killed_player", "killed_mob", "killed_any", "died" ->
+            case "looking_at_player", "looking_at_mob" -> (player, state) -> lookingAt(player, type, values);
+            case "killed_player", "killed_any", "died" ->
                     (player, state) -> state.eventActive(type);
+            case "killed_mob" -> (player, state) -> state.eventActive(type,
+                    String.valueOf(values.getOrDefault("entity-type", "")));
             default -> (player, state) -> false;
         };
     }
@@ -99,11 +104,22 @@ public final class ConditionRegistry {
         return total;
     }
 
-    private double targetEffects(PlayerStateTracker.State state, boolean all) {
-        if (!(state.lastHit() instanceof Player target)
-                || System.currentTimeMillis() - state.lastHitAt() > targetLastHitSeconds * 1000L) return 0;
-        return all ? target.getActivePotionEffects().size()
-                : target.getActivePotionEffects().stream().filter(effect -> !effect.getType().isBeneficial()).count();
+    private double targetEffects(Player player, PlayerStateTracker.State state,
+                                 Map<String, Object> values, boolean all) {
+        String source = String.valueOf(values.getOrDefault("target-source", targetSource)).toLowerCase(Locale.ROOT);
+        org.bukkit.entity.Entity target = null;
+        if (source.equals("last_hit") || source.equals("any")) {
+            if (state.lastHit() != null && System.currentTimeMillis() - state.lastHitAt()
+                    <= targetLastHitSeconds * 1000L) target = state.lastHit();
+        }
+        if (source.equals("looking") || (source.equals("any") && target == null)) {
+            target = player.getTargetEntity(targetRayDistance);
+        }
+        if (!(target instanceof org.bukkit.entity.LivingEntity living)) return 0;
+        String entityType = String.valueOf(values.getOrDefault("entity-type", ""));
+        if (!entityType.isBlank() && !living.getType().name().equalsIgnoreCase(entityType)) return 0;
+        return all ? living.getActivePotionEffects().size()
+                : living.getActivePotionEffects().stream().filter(effect -> !effect.getType().isBeneficial()).count();
     }
 
     private boolean armorSlotPresent(Player player, Map<String, Object> values) {
@@ -114,11 +130,13 @@ public final class ConditionRegistry {
         return present == expected;
     }
 
-    private boolean lookingAt(Player player, String type) {
+    private boolean lookingAt(Player player, String type, Map<String, Object> values) {
         org.bukkit.entity.Entity target = player.getTargetEntity(targetRayDistance);
         if (target == null) return false;
-        return type.equals("looking_at_player") ? target instanceof Player
-                : !(target instanceof Player) && target instanceof org.bukkit.entity.LivingEntity;
+        if (type.equals("looking_at_player")) return target instanceof Player;
+        if (!(target instanceof org.bukkit.entity.LivingEntity)) return false;
+        String entityType = String.valueOf(values.getOrDefault("entity-type", ""));
+        return entityType.isBlank() || target.getType().name().equalsIgnoreCase(entityType);
     }
 
     private Condition numeric(NumericValue value, String expression) {
