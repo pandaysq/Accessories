@@ -93,7 +93,8 @@ public final class AccessoryConfig {
         }
         int chance = Math.max(0, Math.min(100, item.getInt("death-keep-chance", 0)));
         return new AccessoryDefinition(id, item.getString("name", "<white>" + id),
-                item.getStringList("lore"), type, material.name(), item.getInt("model-number", 0), chance, effects);
+                item.getStringList("lore"), type, material.name(), item.getInt("model-number", 0), chance,
+                item.getDouble("mana-max-bonus", 0.0), item.getDouble("mana-regen-bonus", 0.0), effects);
     }
 
     private EffectGroup readEffect(String id, Map<?, ?> raw, int number) {
@@ -124,6 +125,22 @@ public final class AccessoryConfig {
                 }
             }
         }
+        List<EffectGroup.StatDefinition> stats = new ArrayList<>();
+        Object rawStats = raw.get("stats");
+        if (rawStats instanceof List<?> list) {
+            for (Object stat : list) {
+                if (stat instanceof Map<?, ?> values) {
+                    String name = String.valueOf(value(values, "stat", "")).toLowerCase();
+                    if (!knownStats().contains(name)) {
+                        plugin.getLogger().warning("Неизвестный custom stat " + name + " в группе " + key);
+                        continue;
+                    }
+                    stats.add(new EffectGroup.StatDefinition(name,
+                            String.valueOf(value(values, "operation", "ADD_NUMBER")),
+                            Double.parseDouble(String.valueOf(value(values, "amount", 0)))));
+                }
+            }
+        }
         List<EffectGroup.PotionDefinition> potions = new ArrayList<>();
         Object rawPotions = raw.get("potion-effects");
         if (rawPotions instanceof List<?> list) {
@@ -142,7 +159,7 @@ public final class AccessoryConfig {
                 plugin.getLogger().warning("Эффект " + key + " использует событие без duration-after-trigger > 0");
             }
         }
-        return new EffectGroup(key, mode, duration, conditions, attributes, potions);
+        return new EffectGroup(key, mode, duration, conditions, attributes, stats, potions);
     }
 
     private Object value(Map<?, ?> values, Object key, Object fallback) {
@@ -167,4 +184,7 @@ public final class AccessoryConfig {
     public int checkInterval() { return Math.max(1, main.getInt("settings.condition-check-interval-ticks", 10)); }
     public int targetLastHitSeconds() { return main.getInt("settings.target-last-hit-seconds", 15); }
     public int targetRayDistance() { return main.getInt("settings.target-ray-distance", 20); }
+    public String targetSource() { return main.getString("settings.target-source", "any"); }
+    public List<String> knownStats() { return main.getStringList("stats.known").stream()
+            .map(String::toLowerCase).toList(); }
 }
