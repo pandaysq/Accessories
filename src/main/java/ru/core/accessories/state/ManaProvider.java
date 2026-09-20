@@ -10,4 +10,9 @@ import org.bukkit.entity.Player;
 public interface ManaProvider {
     double getMana(Player player);
     double getManaRegen(Player player);
+
+    default void addMaxModifier(Player player, String key, double amount) {}
+    default void removeMaxModifier(Player player, String key) {}
+    default void addRegenModifier(Player player, String key, double amount) {}
+    default void removeRegenModifier(Player player, String key) {}
 }
