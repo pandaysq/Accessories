@@ -1,1 +1,34 @@
-accessories: {}
+accessories:
+  ruby_ring:
+    name: '<red>Рубиновое кольцо'
+    lore:
+      - '<gray>Даёт магический урон и защиту'
+    type: RING
+    material: STICK
+    model-number: 1001
+    death-keep-chance: 25
+    mana-max-bonus: 100.0
+    mana-regen-bonus: 1.0
+    effects:
+      - group: 1
+        mode: all
+        duration-after-trigger: 0
+        conditions:
+          - type: health
+            value: '<=8'
+        attributes:
+          - attribute: ATTACK_DAMAGE
+            operation: ADD_NUMBER
+            amount: 2.0
+        stats:
+          - stat: magic_damage
+            operation: ADD_NUMBER
+            amount: 5.0
+          - stat: magic_defense
+            operation: ADD_SCALAR
+            amount: 0.1
+        potion-effects:
+          - type: STRENGTH
+            amplifier: 0
+            particles: false
+            icon: false
