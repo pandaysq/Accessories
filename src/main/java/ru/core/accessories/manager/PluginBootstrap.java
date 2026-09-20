@@ -3,6 +3,8 @@ package ru.core.accessories.manager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import ru.core.accessories.AccessoriesPlugin;
+import ru.core.accessories.api.AccessoriesAPI;
+import ru.core.accessories.api.AccessoriesApiService;
 import ru.core.accessories.commands.AccessoriesCommand;
 import ru.core.accessories.config.AccessoryConfig;
 import ru.core.accessories.config.MessageManager;
@@ -11,6 +13,9 @@ import ru.core.accessories.integration.LibraryBridge;
 import ru.core.accessories.listener.AccessoryListener;
 import ru.core.accessories.listener.PlayerListener;
 import ru.core.accessories.state.PlayerStateTracker;
+import ru.core.accessories.state.ManaBridge;
+import ru.core.accessories.state.ManaProvider;
+import ru.core.accessories.state.NoManaProvider;
 import ru.core.accessories.ui.AccessoryMenu;
 import ru.core.accessories.ui.InterfaceItems;
 
@@ -33,8 +38,14 @@ public final class PluginBootstrap {
         InterfaceItems interfaceItems = new InterfaceItems(plugin, config);
         PlayerStateTracker state = new PlayerStateTracker(plugin, config);
         AccessoryMenu menu = new AccessoryMenu(plugin, config, library, interfaceItems);
-        EffectEngine effects = new EffectEngine(plugin, config, library, state);
-        PluginServices services = new PluginServices(config, messages, library, interfaceItems, menu, state, effects);
+        ManaBridge manaBridge = new ManaBridge(plugin);
+        ManaProvider mana = manaBridge.available() ? manaBridge : new NoManaProvider();
+        EffectEngine effects = new EffectEngine(plugin, config, library, state, mana);
+        AccessoriesAPI api = new AccessoriesApiService(effects);
+        Bukkit.getServicesManager().register(AccessoriesAPI.class, api, plugin,
+                org.bukkit.plugin.ServicePriority.Normal);
+        PluginServices services = new PluginServices(config, messages, library, interfaceItems,
+                menu, state, effects, api);
 
         effects.start();
         registerCommand(new AccessoriesCommand(plugin, services));
