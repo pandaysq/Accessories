@@ -1,0 +1,30 @@
+name: Accessories
+version: '${version}'
+main: ru.core.accessories.AccessoriesPlugin
+api-version: '1.21'
+authors: [CoreCommands]
+description: Configurable accessory slots, conditions and effects.
+depend: [CustomItemsLibrary]
+
+commands:
+  accessories:
+    description: Manage accessory items and configuration
+    usage: /accessories <reload|give>
+    aliases: [accessory]
+
+permissions:
+  accessories.admin:
+    description: Reload the plugin and give configured accessories
+    default: op
+  accessory.slot.necklace:
+    description: Use the necklace slot
+    default: true
+  accessory.slot.emblem:
+    description: Use the emblem slot
+    default: true
+  accessory.slot.ring1:
+    description: Use the first ring slot
+    default: true
+  accessory.slot.ring2:
+    description: Use the second ring slot
+    default: true
