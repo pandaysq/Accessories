@@ -48,13 +48,21 @@ public final class PlayerStateTracker {
     public void recordEvent(Player player, String event) {
         State state = state(player);
         state.eventStarted.put(event, System.currentTimeMillis());
+        state.eventEntityTypes.remove(event);
+        state.events.put(event, System.currentTimeMillis()
+                + Math.max(1, config.main().getInt("settings.event-trigger-seconds", 60)) * 1000L);
+    }
+
+    public void recordEvent(Player player, String event, String entityType) {
+        State state = state(player);
+        state.eventStarted.put(event, System.currentTimeMillis());
+        state.eventEntityTypes.put(event, entityType);
         state.events.put(event, System.currentTimeMillis()
                 + Math.max(1, config.main().getInt("settings.event-trigger-seconds", 60)) * 1000L);
     }
 
     public boolean eventActive(Player player, String event) {
-        Long expires = state(player).events.get(event);
-        return expires != null && expires > System.currentTimeMillis();
+        return state(player).eventActive(event);
     }
 
     public static final class State {
@@ -70,11 +78,16 @@ public final class PlayerStateTracker {
         public long lastMoveAt() { return lastMoveAt; }
         public org.bukkit.entity.Entity lastHit() { return lastHit; }
         public boolean eventActive(String event) {
-            Long expires = events.get(event);
-            return expires != null && expires > System.currentTimeMillis();
+            return eventStarted.containsKey(event);
+        }
+        public boolean eventActive(String event, String entityType) {
+            if (!eventActive(event)) return false;
+            return entityType == null || entityType.isBlank()
+                    || entityType.equalsIgnoreCase(eventEntityTypes.get(event));
         }
         public long eventTriggeredAt(String event) {
             return eventStarted.getOrDefault(event, 0L);
         }
+        private final Map<String, String> eventEntityTypes = new ConcurrentHashMap<>();
     }
 }
